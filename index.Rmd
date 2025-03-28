@@ -1,0 +1,167 @@
+---
+title: "Statistics Tutorial"
+author: "Gabrielle Davidson"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+---
+
+# Getting started
+
+Welcome to the statistics tutorial for datasets typically encountered in the Davidson Lab, School of Biological Sciences, University of East Anglia. This guide will walk you through selecting the appropriate statistical model for your data, formulating the model syntax and variables, testing model assumptions, improving model fit, and performing “model selection.” We will also cover commonly used graphical representations for different types of data.
+
+## Install and load R packages dependencies 
+```{r eval=FALSE}
+# Install the required packages (if not already installed)
+required_packages <- c("tidyverse", "lme4", "MASS", "nlme", "lmerTest", "MuMIn", "ggpubr")
+
+# Install packages that aren't already installed
+install_if_needed <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(install_if_needed)) install.packages(install_if_needed)
+
+You can also install each manually using the function install.packages("nameOfPackage")
+
+# Load the packages after installation
+library(tidyverse)   # A collection of R packages for data science
+library(lme4)        # Provides tools for fitting linear and generalized linear mixed-effects models (GLMMs).
+library(MASS)        # A large collection of statistical functions, with a focus on generalized linear models (GLMs).
+library(nlme)        # Mixed-effects models, and can fit both linear and nonlinear mixed-effects models (U-shaped, sigmoidal, exponential). Model diagnostic tools. 
+library(lmerTest)    # Adds p-values to lme4 models
+library(MuMIn)       # Model selection & averaging
+library(ggplot2)     # Data visualization
+library(ggpubr)      # Enhanced ggplot2 functions
+```
+
+## If you have trouble installing packages try the following: 
+* Read the content of the error warning
+* Does the package you are installing have dependencies? the error may say "x package not found". Install that package using ```install.packages("nameofpackage")```
+* Search the error online
+* Search alternative ways to install the package. Sometimes vignettes for the package have direct links you can use for installation, rather than using ```install.packages()```
+
+# Choosing an appropriate statistical test
+
+## Regression models
+
+LMs (Linear Models), GLMs (Generalized Linear Models), and GLMMs (Generalized Linear Mixed Models) are all part of a broad collection of regression models. Each of these models is used to examine relationships between dependent and independent variables, but **they differ in their assumptions, data requirements, and flexibility**.
+
+### **Linear Models (LMs)**:
+LMs are the simplest type of regression models. They model the relationship between a dependent variable (response) and one or more independent variables (predictors) using a linear equation.
+
+The model can be written as: 
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \epsilon
+$$
+
+Where:
+- \( Y \) is the dependent variable, and specifically a continuous variable (i.e. gaussian distribution).
+- \( \beta_0 \) is the intercept.
+- \( \beta_1, \beta_2, \dots \) are the coefficients for the independent variables \( X_1, X_2, \dots \).
+- \( \epsilon \) is the error term.
+
+### **Linear Mixed Models (LMMs)**:
+
+The Linear Mixed Model (LMM) is an extension of the linear model that includes **random effects** to account for correlations within grouped or hierarchical data. These might include repeated measures (i.e. data points collected) from the same individuals, or repeated measures (i.e. data points collected) from the same geographical site. 
+
+The model can be written as:
+
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + b_0 + \epsilon
+$$
+
+Where:
+- \( Y \) is the dependent variable, and specifically a continuous variable (i.e. gaussian distribution).
+- \( \beta_0 \) is the **fixed intercept**.
+- \( \beta_1, \beta_2, \dots \) are the **fixed effect coefficients** for the independent variables \( X_1, X_2, \dots \).
+- \( b_0 \) is the **random intercept** associated with each group, representing the deviation of each group’s intercept from the overall intercept. It is assumed to follow a normal distribution with mean 0 and variance \( \sigma^2_b \), i.e., \( b_0 \sim \mathcal{N}(0, \sigma^2_b) \).
+- \( \epsilon \sim \mathcal{N}(0, \sigma^2) \) is the **residual error term**, assumed to be normally distributed with mean 0 and variance \( \sigma^2 \).
+
+**What does it mean?** 
+- If modeling data with repeated measurements from subjects, \( b_0 \) accounts for individual-specific variations in the intercept.
+- The fixed effects (\( \beta_0, \beta_1, \dots \)) represent the overall average relationship between predictors and the outcome, while the random effects capture variation at the group level.
+
+This formulation allows the model to handle **correlated data** within groups, such as multiple measurements from the same subject or repeated observations from different locations.
+
+### **Generalised Linear Models (GLMs)**:
+
+GLMs extend linear models by allowing for response variables that have distributions other than the normal distribution (e.g., binomial, Poisson).
+
+They introduce the concept of a link function to model the relationship between the predictors and the mean of the response variable.
+
+GLMs are used when the response variable is categorical (e.g., logistic regression for binary outcomes) or count data (e.g., Poisson regression).
+
+The model can be written as: 
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \epsilon
+$$
+
+Where:
+- \( Y \) is the dependent variable which can follow distributions such as **binary** (e.g., for logistic regression) or **count** (e.g., for Poisson regression).
+- \( \beta_0 \) is the intercept.
+- \( \beta_1, \beta_2, \dots \) are the coefficients for the independent variables \( X_1, X_2, \dots \).
+- \( \epsilon \) is the error term.
+
+### **Generalised Linear Mixed Models (GLMMs)**
+
+The Generalized Linear Mixed Model (GLMM) extends the Generalized Linear Model (GLM) by incorporating **random effects**, which allow for hierarchical or grouped data structures.
+
+The model can be written as:
+
+$$
+Y = g^{-1} \left( \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + b_0 + \epsilon \right)
+$$
+
+Where:
+- \( Y \) is the dependent variable which can follow distributions such as **binary** (e.g., for logistic regression) or **count** (e.g., for Poisson regression).
+- \( g^{-1} \) is the **inverse link function**, mapping the linear predictor to the expected value of \( Y \).
+- \( \beta_0 \) is the **fixed intercept**.
+- \( \beta_1, \beta_2, \dots \) are the **fixed effect coefficients** for the independent variables \( X_1, X_2, \dots \).
+- \( b_0 \sim \mathcal{N}(0, \sigma^2_b) \) is the **random intercept**, assumed to follow a normal distribution with mean 0 and variance \( \sigma^2_b \).
+- \( \epsilon \sim \mathcal{N}(0, \sigma^2) \) is the **residual error term**.
+
+**What does it mean?**
+- If modeling repeated measures, \( b_0 \) represents variation in the intercept for different individuals.
+- If modeling data from multiple locations, \( b_0 \) accounts for location-specific differences.
+
+This formulation allows the model to **capture dependencies** within grouped data while retaining the flexibility of a generalized linear framework.
+
+### Selecting the appropriate regression model for your data
+
+Simply put, follow the workflow (Figure 1) to select the right regression model for your data.
+
+<center>
+```{r out.width="60%", out.height="60%", echo=FALSE, fig.align="center"}
+knitr::include_graphics("F:/RWorkspace/GitHub/stats-tutorial/data/regression_workflow.tif")
+
+```
+Figure 1. Regression model selection workflow
+
+</div> 
+
+## Principal Component Analysis (PCA)
+
+Principal Component Analysis (PCA) is a **dimensionality reduction** technique used to simplify large datasets by transforming the data into a smaller set of uncorrelated variables called **principal components**. These components explain the variance in the original data, with the first principal component explaining the greatest variance.
+
+For example, imagine you have a dataset containing scores from an intelligence test, where multiple measures (such as memory, reasoning, problem-solving, etc.) are recorded. These measures may be correlated, as they all assess aspects of cognitive ability. PCA can be used to combine these correlated variables into a smaller number of principal components, capturing the main variation in the data without losing significant information.
+
+The PCA model can be written as:
+
+$$
+\mathbf{X} = \mathbf{T} \mathbf{P}^T + \mathbf{E}
+$$
+
+Where:
+- \( \mathbf{X} \) is the original data matrix (with variables as columns and observations as rows).
+- \( \mathbf{T} \) is the **scores matrix**, where each row represents the transformed data in terms of the principal components.
+- \( \mathbf{P} \) is the **loading matrix**, representing the eigenvectors (directions) of the original data that correspond to the principal components.
+- \( \mathbf{E} \) is the **residual matrix**, representing the part of the original data that cannot be explained by the principal components.
+
+**What does it mean?**
+- PCA identifies the axes (principal components) that maximize the variance in the data.
+- The first principal component \( \mathbf{t}_1 \) explains the greatest variance, while subsequent components \( \mathbf{t}_2, \mathbf{t}_3, \dots \) explain progressively less variance.
+- The loadings matrix \( \mathbf{P} \) shows how each original variable contributes to the principal components.
+
+PCA is commonly used for:
+- **Data reduction**, where a smaller number of principal components are used to represent the data with minimal loss of information.
+- **Visualisation** of high-dimensional data, typically in 2D or 3D plots, by using the first two or three principal components.
