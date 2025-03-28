@@ -4,6 +4,7 @@ author: "Gabrielle Davidson"
 date: "`r Sys.Date()`"
 output: 
   html_document:
+    mathjax: "default"
     toc: true
     number_sections: true
 ---
