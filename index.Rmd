@@ -1,6 +1,6 @@
 ---
 title: "Statistics Tutorial"
-author: "Gabrielle Davidson"
+author: "Gabrielle Davidson, School of Biological Sciences, University of East Anglia"
 date: "`r Sys.Date()`"
 output: 
   html_document:
@@ -35,7 +35,8 @@ library(ggplot2)     # Data visualization
 library(ggpubr)      # Enhanced ggplot2 functions
 ```
 
-## If you have trouble installing packages try the following: 
+## Troubleshooting install issues
+If you have trouble installing packages try the following: 
 * Read the content of the error warning
 * Does the package you are installing have dependencies? the error may say "x package not found". Install that package using ```install.packages("nameofpackage")```
 * Search the error online
