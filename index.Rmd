@@ -13,7 +13,7 @@ output:
 
 Welcome to the statistics tutorial for datasets typically encountered in the Davidson Lab, School of Biological Sciences, University of East Anglia. This guide will walk you through selecting the appropriate statistical model for your data, formulating the model syntax and variables, testing model assumptions, improving model fit, and performing “model selection.” We will also cover commonly used graphical representations for different types of data.
 
-## Install and load R packages dependencies 
+## Install and load R package dependencies 
 ```{r eval=FALSE}
 # Install the required packages (if not already installed)
 required_packages <- c("tidyverse", "lme4", "MASS", "nlme", "lmerTest", "MuMIn", "ggpubr")
@@ -48,7 +48,7 @@ If you have trouble installing packages try the following:
 
 LMs (Linear Models), GLMs (Generalized Linear Models), and GLMMs (Generalized Linear Mixed Models) are all part of a broad collection of regression models. Each of these models is used to examine relationships between dependent and independent variables, but **they differ in their assumptions, data requirements, and flexibility**.
 
-### Linear Models (LMs):
+### Linear Models (LMs)
 LMs are the simplest type of regression models. They model the relationship between a dependent variable (response) and one or more independent variables (predictors) using a linear equation.
 
 The model can be written as: 
@@ -62,7 +62,7 @@ Where:
 - \( \beta_1, \beta_2, \dots \) are the coefficients for the independent variables \( X_1, X_2, \dots \).
 - \( \epsilon \) is the error term.
 
-### Linear Mixed Models (LMMs):
+### Linear Mixed Models (LMMs)
 
 The Linear Mixed Model (LMM) is an extension of the linear model that includes **random effects** to account for correlations within grouped or hierarchical data. These might include repeated measures (i.e. data points collected) from the same individuals, or repeated measures (i.e. data points collected) from the same geographical site. 
 
@@ -85,7 +85,7 @@ Where:
 
 This formulation allows the model to handle **correlated data** within groups, such as multiple measurements from the same subject or repeated observations from different locations.
 
-### Generalised Linear Models (GLMs):
+### Generalised Linear Models (GLMs)
 
 GLMs extend linear models by allowing for response variables that have distributions other than the normal distribution (e.g., binomial, Poisson).
 
@@ -128,12 +128,14 @@ Where:
 
 This formulation allows the model to **capture dependencies** within grouped data while retaining the flexibility of a generalized linear framework.
 
+---
+
 ### Selecting the appropriate regression model for your data
 
 Simply put, follow the workflow (Figure 1) to select the right regression model for your data.
 
 
-```{r out.width="60%", out.height="60%", echo=FALSE, fig.align="center"}
+```{r out.width="75%", out.height="75%", echo=FALSE, fig.align="center"}
 knitr::include_graphics("F:/RWorkspace/GitHub/stats-tutorial/data/regression_workflow.tif")
 
 ```
@@ -141,6 +143,24 @@ knitr::include_graphics("F:/RWorkspace/GitHub/stats-tutorial/data/regression_wor
 Figure 1. Regression model selection workflow
 </center>
 
+## Model Assumptions for LM, LMM, GLM, and GLMM
+
+| **Model Type**            | **Homoscedasticity (Homogeneity of Variance)** | **Normality of Residuals** | **Linearity** | **Independence of Observations/Errors** | **Definition**                                                                                                                                   |
+|---------------------------:|:-----------------------------------------------:|:----------------------------:|:---------------:|:------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Linear Model (LM)**      | Yes                                           | Yes                        | Yes           | Yes                                      | Homoscedasticity assumes the variance of the residuals is constant across all levels of the predictors. Normality assumes the residuals are normally distributed. Linearity assumes a straight-line relationship between predictors and the response variable. Independence assumes that observations (or errors) are not correlated with each other.                     |
+| **Linear Mixed Model (LMM)** | Yes                                           | Yes                        | Yes           | Yes                                      | Similar to LM, but also accounts for random effects. Homoscedasticity applies to residuals after accounting for random effects. Normality applies to both residuals and random effects. Linearity and independence assumptions are similar to LM.|
+| **Generalized Linear Model (GLM)** | No                                           | No                         | Yes           | No                                       | GLMs do not assume homoscedasticity; variance is determined by the distribution of the response variable. Normality is not assumed, as the response follows the appropriate distribution. Linearity still applies in terms of the linear predictor, but independence of observations is crucial.|
+| **Generalized Linear Mixed Model (GLMM)** | No                                           | No                         | Yes           | No                                       | Similar to GLM, GLMMs do not assume homoscedasticity or normality. The variance depends on the response distribution, and errors follow the chosen family (e.g., Poisson, binomial). Linearity applies to the linear predictor, but observations are not assumed independent due to random effects.|
+
+### Summary of assumptions
+
+**Homoscedasticity (Homogeneity of Variance)**: This assumption states that the variance of the residuals should be constant across all levels of the independent variable(s). In the context of linear and linear mixed models, the residuals should exhibit consistent spread across the predictor values.
+
+**Normality of Residuals**: This assumption holds that the residuals (or errors) from the model should follow a normal distribution. For linear models, this is important for valid hypothesis testing and constructing confidence intervals. In mixed models, it applies to both residuals and random effects.
+
+**Linearity**: This assumption states that there is a linear relationship between the independent variable(s) and the dependent variable. For linear models, the effect of each predictor on the outcome is assumed to be linear, meaning a unit change in the predictor corresponds to a fixed change in the outcome.
+
+**Independence of Observations/Errors**: This assumption holds that the residuals (errors) are independent of one another. In linear and mixed models, this means that one observation (or error) is not correlated with another, ensuring the independence of the data points used in the model.
 
 
 ## Principal Component Analysis (PCA)
@@ -170,6 +190,7 @@ PCA is commonly used for:
 - **Data reduction**, where a smaller number of principal components are used to represent the data with minimal loss of information.
 - **Visualisation** of high-dimensional data, typically in 2D or 3D plots, by using the first two or three principal components.
 
+---
 
 # Regression models in R
 
@@ -215,6 +236,8 @@ For example, age may positively affect cognition in males but not in females. ol
 Ignoring the interaction could lead to incorrect inferences. For instance, a model without the interaction term might incorrectly assume that age affects males and females the same way.
 
 That being said, be sure to only include interaction terms if you have an a priori reason to test the interaction, based on existing literature, ecological theory or speculations based on observations. 
+
+---
 
 ## Example dataset and models
 
@@ -270,9 +293,134 @@ Generate the statistical output of your model
 summary(model)
 ```
 
-### model interpretation
+### LMM model output and interpretation 
 
-TO COME
+The key details to pay attention to are the fixed effects (Table 1) and random effects tables (Table2). 
+
+**Estimate**:
+
+The model’s best guess at the effect size of each predictor. The intercept in a linear model represents the baseline category, which is determined by the reference levels of categorical predictors. In this case, adults (age) and female (sex) are the baseline reference categories (i.e. what juveniles and males are compared to, respectively). The baseline category is determined by the model based on *alphabetical order*.  
+**Intercept** (12.99): The estimated cognition score for an adult female with body size = 0 (baseline category).  
+**Age (juvenile)** = 3.25: Juveniles have, on average, a 3.25-point higher cognition score than adults (when holding other factors constant). This is statistically significant.  
+**Sex (male)** = 1.98: Although males have a slightly higher cognition score than females, the effect is not statistically significant.  
+**Body size** = -0.0089: Body size does not predict cognition in this model.  
+**Interaction (agejuvenile:sexmale)** = 0.71: The additional effect of being both juvenile and male is not significant.
+
+**Standard Error (SE)**:
+
+Measures the uncertainty around each estimate. Larger SE means less confidence in the estimate.
+
+**Degrees of Freedom (df)**:
+
+Degrees of freedom (df) determine how much information is available to estimate model parameters and conduct significance tests, it takes into account sample size and fixed and random effects. It's used to calculate the t-value and p-value. 
+
+**t-value**:
+
+Computed as Estimate / SE. Higher t-values indicate stronger evidence that the effect is different from zero. The sign of the t-value indicates the direction of the relationship (i.e. positive or negative for categorical values; greater than or less than the reference category)
+
+**p-value**:
+
+Measures the probability that the observed effect happened by chance.
+Thresholds:
+
+<0.10: non-significant trend (.)
+
+<0.05: Significant (*)
+
+<0.01: Very significant (**)
+
+<0.001: Highly significant (***)
+
+```{r, echo = FALSE}
+library(knitr)
+library(kableExtra)
+
+# Fixed Effects Table
+fixed_effects <- data.frame(
+  Term = c("(Intercept)", "age (juvenile)", "sex (male)", "body size", "age × sex interaction"),
+  Estimate = c(12.99, 3.25, 1.98, -0.0089, 0.71),
+  `Std. Error` = c(2.45, 1.34, 1.30, 0.045, 1.98),
+  df = c(84.69, 93.38, 94.16, 94.74, 94.20),
+  `t value` = c(5.30, 2.42, 1.53, -0.198, 0.357),
+  `p value` = c(9.07e-07, 0.0173, 0.1304, 0.8434, 0.7221)
+)
+
+kable(fixed_effects, digits = 3, caption = "Table 1: Fixed Effects from LMM") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "bordered"))
+```
+
+The random effects tell us how much variation is explained by the random effects and how much variation remains unexplained by the model. 
+
+**Site (random intercept variance = 0.12)**: Suggests only a small amount of variation in cognition is due to site differences.
+
+**Residual variance (23.77)**: The amount of variability left unexplained by the model.
+
+```{r, echo = FALSE}
+# Random Effects Table
+random_effects <- data.frame(
+  Group = c("Site", "Residual"),
+  Name = c("(Intercept)", "-"),
+  Variance = c(0.12, 23.77),
+  `Std. Dev.` = c(0.35, 4.88)
+)
+
+kable(random_effects, digits = 3, caption = "Table 2: Random Effects from LMM") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "bordered"))
+```
+
+## Checking model assumptions
+
+In this section, we will apply two common transformations to the response variable (`cognition`): the **log transformation** and the **square root transformation**. These transformations can help stabilize variance and improve model fit. We will then assess the residuals from the different models to determine which, if any, transformation fits best.
+To visualise **normality of residuals** we assess which plot shows datapoints that are best aligned with (tightly fit against) the solid regression line. 
+to visualise **homogeneity of residuals**, we are looking for the plot where the datapoints are more randomly distributed (i.e. no clumping).
+
+```{r}
+# Apply log transformation
+bird_data$cognition_log <- log(bird_data$cognition + 1)  # log(x+1) to avoid log(0)
+
+# Apply square root transformation
+bird_data$cognition_sqrt <- sqrt(bird_data$cognition)
+
+# Fit models for raw, log-transformed, and square root-transformed data
+model_raw <- lmer(cognition ~ age * sex + body_size + (1 | site), data = bird_data)
+model_log <- lmer(cognition_log ~ age * sex + body_size + (1 | site), data = bird_data)
+model_sqrt <- lmer(cognition_sqrt ~ age * sex + body_size + (1 | site), data = bird_data)
+
+# Check residuals for each model
+residuals_raw <- residuals(model_raw)
+residuals_log <- residuals(model_log)
+residuals_sqrt <- residuals(model_sqrt)
+
+# Check normality of residuals using Q-Q plots
+par(mfrow = c(1, 3))  # Set up a 1x3 layout for the plots
+qqnorm(residuals_raw, main = "Raw Data")
+qqline(residuals_raw)
+
+qqnorm(residuals_log, main = "Log-transformed Data")
+qqline(residuals_log)
+
+qqnorm(residuals_sqrt, main = "Square Root-transformed Data")
+qqline(residuals_sqrt)
+
+# Reset layout
+par(mfrow = c(1, 1))
+
+# Plot residuals vs fitted values for homogeneity of variance
+par(mfrow = c(1, 3))  # Set up a 1x3 layout for the plots
+plot(fitted(model_raw), residuals_raw, main = "Raw Data", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+plot(fitted(model_log), residuals_log, main = "Log-transformed Data", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+plot(fitted(model_sqrt), residuals_sqrt, main = "Square Root-transformed Data", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# Reset layout
+par(mfrow = c(1, 1))
+```
+
+Having reviewed these plots, the raw data is the best fit, there is no need to transform the response variable. 
 
 ### GLMM binomial distribution with random effects: 
 ```{r}
@@ -285,9 +433,7 @@ head(bird_data)
 ```{r}
 # Run the model
 # Fit a mixed-effects logistic regression model
-model2 <- glmer(correct_choice ~ age * sex + body_size + (1 | site), 
-                family = binomial(link = "logit"), 
-                data = bird_data)
+model2 <- glmer(correct_choice ~ age * sex + body_size + (1 | site), family = binomial(link = "logit"), data = bird_data)
 ```
 
 Generate the statistical output of your model
@@ -296,3 +442,198 @@ Generate the statistical output of your model
 summary(model2)
 ```
 
+### GLMM model output and interpretation 
+The model output is similar to that of an LMM, except that the test statistic is a z-value, and degrees of freedom cannot be calculated. Because of this, glmer will not normally return p-values, which is why lmerTest is loaded as it estimates p values based on the z-value. As a rule of thumb, is the absolute value of z-value (or indeed t-value) is 2.00 or greater, the p-value will be statistically significant. 
+
+In this example a warning about singular fit was returned. This is because no variance was explained by site in this model. 
+
+There is also a non-significant trend for juvenile birds. Also notable is that there is no significant interaction, and therefore this raises the question of whether we should remove that interaction.
+
+### Interactions: to include or not to include?
+
+Including non-significant terms increases noise. Sometimes models can be packed so full of terms and interactions that they are overfit and fail to converge. More parameters make the model more complex without improving accuracy. Unnecessary interactions can lead to higher standard errors and less precise estimates for other terms.Every added predictor consumes df, reducing statistical power for detecting real effects. Removing non-significant interactions frees up df, improving estimates of main effects. One school of thought is to adopt parsimony: The best model is the simplest one that adequately explains the data. This rationale applies not just to interactions, but also main effects. 
+
+To demonstrate this, run the previous model without the interaction term
+
+```{r}
+# Run the model
+# Fit a mixed-effects logistic regression model without the interaction term
+model3 <- glmer(correct_choice ~ age + sex + body_size + (1 | site), family = binomial(link = "logit"), data = bird_data)
+summary(model3)
+```
+
+Without the interaction term, males have significantly higher cognition than females, and there is a trend for juveniles to have better cognition than adults. 
+
+---
+
+## Model selection 
+
+There are many methods for simplifying models by removing predictor terms. This is known as "model selection". The best model selection method depends on who you speak to, and current trends. 
+
+**Summary of Model Selection Methods**
+
+| Method | Best for | Advantages | Disadvantages |
+|--------|---------|------------|---------------|
+| **LRT** | Hypothesis testing, mixed models | Compares model fit rigorously | Requires nested models, sensitive to sample size |
+| **AIC** | Model selection, avoiding overfitting | Penalises complexity, allows non-nested comparisons | No hypothesis testing, sensitive to small sample sizes |
+| **p-values** | Quick significance check | Easy to interpret, widely used | Ignores overall model fit, affected by sample size |
+
+**Recommendations:**
+- Use **LRT** if testing a specific hypothesis about an effect.
+- Use **AIC** for overall model selection and avoiding overfitting.
+- Use **p-values** for quick checks, but don’t rely on them alone.
+
+
+### Likelihood Ratio Test (LRT)
+
+The **Likelihood Ratio Test (LRT)** compares two **nested models** (one with and one without the term of interest) by evaluating whether removing the term significantly worsens model fit.
+
+LRT Formula
+
+\[
+LRT\ statistic = -2 \times (\log \text{Likelihood of Reduced Model} - \log \text{Likelihood of Full Model})
+\]
+
+If the LRT statistic follows a **χ² distribution**, we can compute a p-value to determine if removing the term significantly worsens the model.
+
+Example in R:
+
+```{r lrt_example}
+library(lme4)
+library(lmerTest)
+
+# Full model (with interaction)
+full_model <- lmer(cognition ~ age * sex + body_size + (1 | site), data = bird_data)
+
+# Reduced model (without interaction)
+reduced_model <- lmer(cognition ~ age + sex + body_size + (1 | site), data = bird_data)
+
+# LRT comparison
+anova(reduced_model, full_model)
+```
+
+---
+
+### Akaike Information Criterion (AIC) Comparison
+
+The **Akaike Information Criterion (AIC)** balances model fit and complexity:
+
+\[
+AIC = -2 \times \log \text{Likelihood} + 2K
+\]
+
+where \( K \) is the number of estimated parameters. **Lower AIC values indicate better models**.
+
+Example in R:
+
+```{r aic_example}
+AIC(full_model, reduced_model)
+```
+
+- If **ΔAIC < 2**, the models are considered equivalent.
+- If **ΔAIC > 10**, the model with higher AIC is clearly worse.
+
+---
+
+### p-values to perform stepwise elimination
+
+Start with a full model, then remove non-significant interactions first, followed by non-significant main effects (unless they are needed for interpretability). This used to be very popular, but is hardly used now. 
+
+---
+
+## AIC Model selection with model averaging
+
+The order in which you remove terms can affect the output. Therefore the more thorough method for models with several terms is to run every combination of terms present/removed/as interactions. Luckily there are pacakges that can do this for us to automate the process and tell us which models have the lowest AIC values, and if this is greater or less than 2 units (we consider a minimum of 2 units necessary for it to be a better model fit). 
+
+**Global model**: Also known as Full Model. One in which all terms and interactions are included.
+**Top model**: The model with the lowest AIC score.
+**Averaged model**: when more than one model are > 2 AIC units than other models, but < 2 AIC units relative to one another. In otherwords, there are multiple "top models", and so they must come to a combined consensus. 
+
+
+```{r, warning = FALSE}
+library(lme4)
+library(lmerTest)
+library(MuMIn)  
+
+# Full model (with interaction)
+global_model <- glmer(correct_choice ~ age + sex + body_size + (1 | site), family = binomial(link = "logit"), data = bird_data, na.action=na.fail) #must include na.action=na.fail for dredge()
+
+dd<-dredge(global_model, evaluate=TRUE, rank=AICc) # this using AICc for ranking models, where AICc corrects for small sample sizes
+dd
+
+```
+
+TIP: 
+If there is a term you want to be retained for some biological/hypothesis testing justification, you can specify this using the ```subset()``` argument:
+
+``` dd<-dredge(global_model, subset= ~age, evaluate=TRUE, rank=AICc)```
+
+This output shows us a model table. 
+Each row represents a model variation, with different combinations of predictor variables (age, sex, body_size, and their interaction age:sex). 
+The columns indicate:  
+(Int): Intercept estimate.  
+age, sex, body_size, age:sex: Whether each predictor is included (+ for included, - for excluded).
+
+We can subset these models to include the top models with AICc scores that are <2 units. 
+
+**Note that this can sometimes return nothing if there are no model better than the others**  
+In this case, there are two top models. One which includes both sex and age, and one that only includes sex. 
+
+```{r}
+ddAIC_S<-subset(dd, delta < 2)
+ddAIC_S
+```
+
+Next we perform model averaging, which will take these two top models to generate an output that can be reported, which considers both model types are equivalently well-fit
+
+```{r}
+ddMAc<-model.avg(ddAIC_S, subset= delta <2)
+summary(ddMAc)
+```
+
+### Choosing between full and conditional model averaging
+
+When using **model averaging**, you have two options for computing the estimates:  
+
+1. **Full Average:** Includes all candidate models, even if a term is absent in some models. When a term is missing, it is treated as zero.  
+2. **Conditional Average:** Only includes models where a term appears, ignoring models where the term is absent.  
+
+---
+
+**Key Differences and When to Use Each**  
+
+| Approach             | How It Works                                                                 | Pros                                                | Cons                                                |
+|----------------------|------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|
+| **Full Average**      | Assigns a coefficient of **zero** to models where a predictor is missing      | More conservative (reduces overestimation)          | Can underestimate effects if a term is frequently excluded |
+| **Conditional Average** | Averages only across models where the term appears                           | Provides more accurate estimates for included terms | Can overestimate effects if the term is weak but appears in some models |
+
+---
+
+**Which Should You Use?**  
+- If your goal is prediction or avoiding overestimation, use **full averaging** (safer, more conservative).  
+- If you are interested in inference and reporting effects, use **conditional averaging**, as it provides a clearer effect size when a term is included.  
+
+## Reporting your regression analyses
+
+When concluding your analysis, it is important to clearly communicate the findings and rationale behind your model choice. Here's what to include:
+
+### Model Selection
+Report the **best model** based on AICc, ΔAICc, or any other model selection criteria.
+Provide a brief rationale for **why the chosen model** is the best (e.g., best fit, simplicity, parsimony).
+If multiple models are equally good (ΔAICc < 2), discuss **model uncertainty** and present results for each of the competing models.
+
+### Model Averaging
+If you used **model averaging**, specify whether you used the **full average** or **conditional average** and explain the choice (based on whether you prioritize predictive accuracy or effect size estimation).
+Report the **model-averaged coefficients**, including the **estimate**, **standard error**, **z-value**, and **p-value** for each significant term. Ensure clarity by highlighting any predictors that were consistently significant across models.
+   
+### Statistical Significance
+Clearly indicate the **significance of each predictor**. Use standard significance thresholds (e.g., p < 0.05) and report any terms that were **marginally significant** (e.g., p < 0.1).
+If an interaction term (e.g., `age:sex`) is significant, explain the implications of this interaction for understanding the relationship between the predictors and the outcome.
+
+### Other test statistics
+Refer to Table 1 and Table 2 as a guide. 
+   
+### Model Assumptions
+Discuss whether the **assumptions of the model** (normality of residuals, homogeneity of residuals, etc.) were met. If assumptions were violated, describe the steps you took to address them (e.g., log transformations).
+
+# Generating figures and plots
