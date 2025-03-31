@@ -370,7 +370,7 @@ bird_data$cognition <- with(bird_data,
 head(bird_data)
 ```
 
-### LLM gaussian distribution with random effects: 
+### LMM gaussian distribution with random effects: 
 
 ```{r, warning = FALSE, message= FALSE}
 # Run the model
