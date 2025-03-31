@@ -760,3 +760,252 @@ Refer to Table 2 and Table 3 as a guide.
 Discuss whether the **assumptions of the model** (normality of residuals, homogeneity of residuals, etc.) were met. If assumptions were violated, describe the steps you took to address them (e.g., log transformations). Typically this is reported in the methods, so as not to clog the results section, which should focus on the answers to your statistical tests around your hypothesis. 
 
 # Generating figures and plots
+
+This section will cover three types of data plots: Linear regression plot with continuous response and predictor variables; scatterplot with boxplots for categorical predictors; stacked barplot for binomial data across categorical predictors. 
+
+Your plots should reflect the data and analyses performed, and should be as transparent as possible by including individual data points, means/medians, error bars.  
+
+Plots use bird_data generated in previous sections
+
+## Linear regression plot
+
+Imagine we are interested in the effect of body size on cognition. 
+```{r, message=FALSE, warning=FALSE} 
+
+library(ggplot2)
+
+ggplot(bird_data, aes(x=body_size, y=cognition)) + #specify the data, x and y variables
+  geom_point(alpha = 0.7, size = 1.5 ) +  # Add scatterplot points, specify their size, and with slight transparency
+  geom_smooth(method=lm, size = 0.5, colour = "black") +  # Add linear regression line with black colour 
+  theme_bw() +   theme(panel.grid.major = element_blank(),    # Use a clean black-and-white theme,   # Remove major and minor grid lines, customise axis and border appearance
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),  
+                       panel.border = element_rect(linetype = "solid", colour = "black", size=.8)) +
+  theme(text=element_text(size=14,  family="sans"),   # Adjust text size and font, enhance axis ticks
+        axis.ticks = element_line(colour = "black", size = .7)) +
+    labs(x = "Body size (scale mass index)") +   # Set axis labels with meaningful descriptions
+  labs(y = "Cognition (trials to criterion)") 
+```
+
+
+We can also depict regression lines for males and females separately by specifying color
+```{r, message=FALSE, warning=FALSE} 
+
+library(ggplot2)
+
+ggplot(bird_data, aes(x=body_size, y=cognition, color = sex)) + #specify the data, x and y variables
+  geom_point(alpha = 0.7, size = 1.5 ) +  # Add scatterplot points, specify their size, and with slight transparency
+  geom_smooth(method=lm, size = 0.8, se = FALSE) +  # Add linear regression lines for both sexes
+  scale_color_manual(values = c("male" = "#56B4E9", "female" = "#CC79A7"),#consider colour-blind friendly colours
+                     labels = c("Females", "Males")) + # Manually specify legend text
+  theme_bw() +   theme(panel.grid.major = element_blank(),    # Use a clean black-and-white theme,   # Remove major and minor grid lines, customise axis and border appearance
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),  
+                       panel.border = element_rect(linetype = "solid", colour = "black", size=.8)) +
+  theme(text=element_text(size=14,  family="sans"),   # Adjust text size and font, enhance axis ticks
+        axis.ticks = element_line(colour = "black", size = .7)) +
+    labs(x = "Body size (scale mass index)") +   # Set axis labels with meaningful descriptions
+  labs(y = "Cognition (trials to criterion)") 
+```
+
+###Saving your plot 
+
+Use the following code to save as a high quality .tif. 
+This code will save to the current working directory. Adjust the width and height to suit your plot.   
+
+tiff(file="NAME_OF_YOUR_FILE.tiff", width = 4, height = 4, units = 'in', res = 300)  
+ggplot(YOUR_PLOT_CODE)  
+dev.off()
+
+## Scatterplot boxplot
+
+Imagine we are interested in the effect of age and sex on cognition. First, we want to calculate some summary statistics about the sample size, mean, error and confidence intervals 
+
+```{r, warning = FALSE, message = FALSE}
+library(dplyr)
+
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+
+summary_stats <- summarySE(data = bird_data, measurevar = "cognition", groupvars = c("sex", "age"))
+
+summary_stats
+```
+
+
+We apply the mean and error to a boxplot
+
+```{r, warning = FALSE, message = FALSE}
+library(ggplot2)
+
+ggplot(bird_data, aes(x = interaction(age, sex), y = cognition, color = age)) +
+  geom_point(position = position_jitter(width = 0.2), alpha = 0.7, size = 1) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) + #outlier.shape = NA otherwise outliers are duplicated data points on plot
+  geom_pointrange(data = summary_stats,
+                  aes(x = interaction(age, sex), y = cognition, 
+                      ymin = cognition - se, 
+                      ymax = cognition + se,
+                      color =age),
+                  colour = "black", size = 0.6) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    panel.border = element_rect(linetype = "solid", colour = "black", linewidth = 0.8),
+    legend.title = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 20), # Adjust title size here
+    axis.text.x = element_text(angle = 45, hjust = 0.95, vjust = 1.0),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 24),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+  ) +
+  labs(
+    title = "Cognitive performance in birds",
+    x = "",
+    y = "Cognition (trials until criterion)"
+  ) +
+  guides(colour = guide_legend(override.aes = list(size = 16))) +
+  scale_color_manual(values = c(
+    "#00ABE6", "#EFDD9F", "purple", "#577E43"))
+```
+
+
+Now lets rename the x axis ticks
+
+```{r, warning = FALSE, message = FALSE}
+library(ggplot2)
+
+ggplot(bird_data, aes(x = interaction(age, sex), y = cognition, color = age)) +
+  geom_point(position = position_jitter(width = 0.2), alpha = 0.7, size = 1) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) + #outlier.shape = NA otherwise outliers are duplicated data points on plot
+  geom_pointrange(data = summary_stats,
+                  aes(x = interaction(age, sex), y = cognition, 
+                      ymin = cognition - se, 
+                      ymax = cognition + se,
+                      color =age),
+                  colour = "black", size = 0.6) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    panel.border = element_rect(linetype = "solid", colour = "black", linewidth = 0.8),
+    legend.title = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 20), # Adjust title size here
+    axis.text.x = element_text(angle = 45, hjust = 0.95, vjust = 1.0),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 24),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+  ) + scale_x_discrete(labels = c("Female Adult", "Female Juvenile", "Male Adult", "Male Juvenile")) +
+  labs(
+    title = "Cognitive performance in birds",
+    x = "Sex and Age",
+    y = "Cognition (trials until criterion)"
+  ) +
+  guides(colour = guide_legend(override.aes = list(size = 16))) +
+  scale_color_manual(values = c(
+    "#00ABE6", "#EFDD9F", "purple", "#577E43"))
+```
+
+## stacked barplot
+
+Useful for binomial data
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(bird_data, aes(x = interaction(sex, age), fill = factor(correct_choice))) +
+  geom_bar(position = "fill") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_fill(vjust = 0.5)) +
+  scale_x_discrete(labels = c("Female adult", "female juvenile", "Male adult", "Male juvenile")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"), 
+        panel.border = element_rect(linetype = "solid", colour = "black", size = 0.8)) +
+  scale_fill_manual("Correct choice", values = c("1" = "gray49", "0" = "gray84")) +
+  theme(text = element_text(size = 12, family = "sans"),
+        axis.ticks = element_line(colour = "black", size = 0.6)) +
+  labs(x = "Sex and Age", y = "Proportion of individuals")
+```
+
+
+Lets adjust the naming and legend values 
+
+```{r, warning = FALSE, , message = FALSE}
+
+###rename the values in the column from binary 1 and 0 into words so it's visually more appealing and publishable
+bird_data$correct_choice[bird_data$correct_choice == '1'] <- 'Correct'
+bird_data$correct_choice[bird_data$correct_choice == '0'] <- 'Incorrect'
+
+ggplot(bird_data, aes(x = interaction(sex, age), fill = factor(correct_choice))) +
+  geom_bar(position = "fill") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_fill(vjust = 0.5)) +
+ scale_x_discrete(labels = c("Female adult", "female juvenile", "Male adult", "Male juvenile")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"), 
+        panel.border = element_rect(linetype = "solid", colour = "black", size = 0.8)) +
+  scale_fill_manual("Cognition choice", values = c("Correct" = "gray49", "Incorrect" = "gray84")) +
+  theme(text = element_text(size = 12, family = "sans"),
+        axis.ticks = element_line(colour = "black", size = 0.6)) +
+  labs(x = "Sex and Age", y = "Proportion of individuals")
+```
+
+
+And without the interaction between age and sex. 
+
+
+```{r, warning = FALSE, message = FALSE}
+
+# Rename the values in the column from binary 1 and 0 into words so it's visually more appealing and publishable
+bird_data$correct_choice[bird_data$correct_choice == '1'] <- 'Correct'
+bird_data$correct_choice[bird_data$correct_choice == '0'] <- 'Incorrect'
+
+ggplot(bird_data, aes(x = sex, fill = factor(correct_choice))) +
+  geom_bar(position = "fill") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_fill(vjust = 0.5)) +
+  scale_x_discrete(labels = c("Female", "Male")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"), 
+        panel.border = element_rect(linetype = "solid", colour = "black", size = 0.8)) +
+  scale_fill_manual("Cognition choice", values = c("Correct" = "gray49", "Incorrect" = "gray84")) +
+  theme(text = element_text(size = 12, family = "sans"),
+        axis.ticks = element_line(colour = "black", size = 0.6)) +
+  labs(x = "Sex", y = "Proportion of individuals")
+```
