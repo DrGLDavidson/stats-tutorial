@@ -195,7 +195,7 @@ knitr::include_graphics("F:/RWorkspace/GitHub/stats-tutorial/data/regression_wor
 Figure 1. Regression model selection workflow
 </center>
 
-## Model Assumptions for LM, LMM, GLM, and GLMM
+### Model Assumptions for LM, LMM, GLM, and GLMM
 
 | **Model Type**            | **Homoscedasticity (Homogeneity of Variance)** | **Normality of Residuals** | **Linearity** | **Independence of Observations/Errors** | **Definition**                                                                                                                                   |
 |---------------------------:|:-----------------------------------------------:|:----------------------------:|:---------------:|:------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -204,7 +204,7 @@ Figure 1. Regression model selection workflow
 | **Generalized Linear Model (GLM)** | No                                           | No                         | Yes           | No                                       | GLMs do not assume homoscedasticity; variance is determined by the distribution of the response variable. Normality is not assumed, as the response follows the appropriate distribution. Linearity still applies in terms of the linear predictor. Independence of observations is assumed.|
 | **Generalized Linear Mixed Model (GLMM)** | No                                           | No                         | Yes           | No                                       | GLMMs do not assume homoscedasticity or normality. The variance depends on the response distribution, and errors follow the chosen family (e.g., Poisson, binomial). Linearity applies to the linear predictor, but observations are not assumed independent due to random effects.|
 
-### Summary of assumptions
+**Summary of assumptions**
 
 **Homoscedasticity (Homogeneity of Variance)**: This assumption states that the variance of the residuals should be constant across all levels of the independent variable(s). In the context of linear and linear mixed models, the residuals should exhibit consistent spread across the predictor values.
 
@@ -255,8 +255,9 @@ Columns contain variables, including:
 **Response variable** (e.g., count, presence/absence, continuous measure).  
 **Fixed effects** (e.g., treatment, environmental variables).  
 **Random effects** (e.g., subject ID, site, time point).  
-**Categorical variables** should be coded appropriately (e.g., factors, dummy variables).  
-**Numeric variables** should be scaled if necessary for model convergence.  
+
+Categorical variables should be coded appropriately (e.g., factors, dummy variables). Categorical variables will have 2 or more categories, also known as **levels**. In the types of regressions taught in this tutorial, the functions will automatically define a reference level alphabetically. Therefore in a category like age, with levels adult and juvenile, the reference category will be adult and outputs will be described as juvenile *relative to* adult.  
+Numeric variables should be scaled if necessary for model convergence.  
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
@@ -362,7 +363,7 @@ bird_data$cognition <- with(bird_data,
 head(bird_data)
 ```
 
-### GLM gaussian distribution with random effects: 
+### LLM gaussian distribution with random effects: 
 
 ```{r, warning = FALSE, message= FALSE}
 # Run the model
@@ -611,7 +612,7 @@ LRT\ statistic = -2 \times (\log \text{Likelihood of Reduced Model} - \log \text
 
 If the LRT statistic follows a **χ² distribution**, we can compute a p-value to determine if removing the term significantly worsens the model.
 
-Example in R:
+In this example, the p-value is 0.72, therefore the reduced model is not any better than the full model. Keep the full model. 
 
 ```{r lrt_example, message = FALSE}
 library(lme4)
@@ -627,7 +628,6 @@ reduced_model <- lmer(cognition ~ age + sex + body_size + (1 | site), data = bir
 anova(reduced_model, full_model)
 ```
 
-In this example, the p-value is 0.72, therefore the reduced model is not any better than the full model. Keep the full model. 
 ---
 
 ### Akaike Information Criterion (AIC) Comparison
@@ -647,7 +647,7 @@ AIC(full_model, reduced_model)
 ```
 
 - If **ΔAIC < 2**, the models are considered equivalent.
-- If **ΔAIC > 10**, the model with higher AIC is clearly worse.
+- If **ΔAIC > 2**, the model with higher AIC is worse.
 
 ---
 
@@ -672,7 +672,7 @@ library(lmerTest)
 library(MuMIn)  
 
 # Full model (with interaction)
-global_model <- glmer(correct_choice ~ age + sex + body_size + (1 | site), family = binomial(link = "logit"), data = bird_data, na.action=na.fail) #must include na.action=na.fail for dredge()
+global_model <- glmer(correct_choice ~ age*sex + body_size + (1 | site), family = binomial(link = "logit"), data = bird_data, na.action=na.fail) #must include na.action=na.fail for dredge()
 
 dd<-dredge(global_model, evaluate=TRUE, rank=AICc) # this using AICc for ranking models, where AICc corrects for small sample sizes
 dd
@@ -693,14 +693,14 @@ age, sex, body_size, age:sex: Whether each predictor is included (+ for included
 We can subset these models to include the top models with AICc scores that are <2 units. 
 **Note that this can sometimes return nothing if there are no model better than the others**  
 
-In this case, there are two top models. One which includes both sex and age, and one that only includes sex. 
+In this case, there are three top models. One which includes both sex and age as interactions, one that includes sex and age as main effects only, and one that only includes sex. 
 
 ```{r}
 ddAIC_S<-subset(dd, delta < 2)
 ddAIC_S
 ```
 
-Next we perform model averaging, which will take these two top models to generate an output that can be reported, which considers both model types are equivalently well-fit
+Next we perform model averaging, which will take these three top models to generate an output that can be reported, which considers model types as equivalently well-fit
 
 ```{r}
 ddMAc<-model.avg(ddAIC_S, subset= delta <2)
@@ -735,8 +735,8 @@ When concluding your analysis, it is important to clearly communicate the findin
 
 ### Model Selection
 Report the **best model** based on AICc, ΔAICc, or any other model selection criteria.
-Provide a brief rationale for **why the chosen model** is the best (e.g., best fit, simplicity, parsimony).
 If multiple models are equally good (ΔAICc < 2), discuss **model uncertainty** and therefore the choice to perform model averaging.
+If terms are not included in the top model, report their test statistics as they appeared in the global model, but be clear that they were dropped from the top model(s).
 
 ### Model Averaging
 If you used **model averaging**, specify whether you used the **full average** or **conditional average** and explain the choice (based on whether you prioritize predictive accuracy or effect size estimation).
