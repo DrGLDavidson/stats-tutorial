@@ -43,9 +43,14 @@ If you have trouble installing packages try the following:
 * Search the error online
 * Search alternative ways to install the package. Sometimes vignettes for the package have direct links you can use for installation, rather than using ```install.packages()```
 
-# Choosing an appropriate statistical test
+# Workflow
 
-## Defining variables
+```{r out.width="25%", out.height="25%", echo=FALSE, fig.align="center"}
+knitr::include_graphics("F:/RWorkspace/GitHub/stats-tutorial/data/stats_workflows.jpg")
+
+```
+
+# Defining variables
 
 Some terminology can be used interchangeably, here is a breakdown. 
 
@@ -95,6 +100,8 @@ kable(variable_types_table, col.names = c("Variable Type", "Description"), capti
   column_spec(1, bold = TRUE) %>%
   row_spec(0, background = "#D9EAD3", bold = TRUE)  # Set header row background color
 ```
+
+# Choosing an appropriate statistical test
 
 ## Regression models
 
